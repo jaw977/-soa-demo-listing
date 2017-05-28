@@ -6,9 +6,9 @@ Listens for JSON messages on an HTTP port, allowing listings to be created, or s
 
 Listings are stored in a PostgreSQL database.  The app has its own DB instance and does not share data with other apps.  `node model.js --sync` can be used to create the database tables.  (A real world listing service would use a specialized search platform such as Solr or Elastic Search.)
 
-Use `npm start` to start the service.  The app can be directly deployed to Heroku, however it is not tied to Heroku in any way.
+Use `node service.js` to start the service.  The app can be directly deployed to Heroku, however it is not tied to Heroku in any way.
 
-http://senecajs.org and https://github.com/jaw977/soa-demo-service are used to route incoming messages to handler functions, and send messages to other services.
+https://github.com/jaw977/soa-demo-service-amqp is used to route incoming messages to handler functions, and send messages to other services.
 
 ### Messages
 
@@ -33,12 +33,6 @@ http://senecajs.org and https://github.com/jaw977/soa-demo-service are used to r
 
 All configuration happens in environment variables.  
 
-* `PORT`: The port that the app listens on.
 * `DATABASE_URL`: The URL of the PostgreSQL database instance.
-* `CLIENTS`: Other services the app may connect to.  `[user,bid]`
-* `user.ADDR`: Port or hostname of the user service.
-* `bid.ADDR`: Port or hostname of the bid service.
-* `SUBSCRIPTIONS`: Other services to contact when events are published.  `addListing:[bid]`
+* `RABBITMQ_URL`: The URL of the RabbitMQ messaging server.
 * `TOKEN_SECRET`: Shared secret for token verification.
-
-The config variables to manage connections with other services would become unmanageable as the number of services grows.  Using an automatic service discovery mechanism such as https://github.com/senecajs/seneca-mesh would help greatly.

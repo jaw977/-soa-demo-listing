@@ -1,8 +1,10 @@
 const {User,Listing,sequelize} = require('./model.js');
-const Service = require('soa-demo-service');
+const Service = require('soa-demo-service-amqp');
 const authToken = require('soa-demo-token');
 
-async function add({token, category, title, amount},{service}) {
+const service = new Service('listing');
+
+service.add('cmd:add', async ({token, category, title, amount}) => {
 	const user = authToken.verify(token);
 	if (! user) return {error:"Invalid Token."};
 	if (! category) return {error:"Missing Category."};
@@ -12,9 +14,9 @@ async function add({token, category, title, amount},{service}) {
 	const listing = await Listing.create({sellerId:user.userId, category, title, currentBidAmount:amount, nextBidAmount:amount});
 	service.publish("addListing", {listingId:listing.listingId, sellerId:user.userId, category, title, amount});
 	return {listing};
-}
+});
 
-async function search({category, sellerId, sellerUsername, page}) {
+service.add('cmd:search', async ({category, sellerId, sellerUsername, page}) => {
 	const where = {};
 	if (category) where.category = category;
 	if (sellerUsername && ! sellerId) {
@@ -41,17 +43,13 @@ async function search({category, sellerId, sellerUsername, page}) {
 	const toNumber = offset + listings.length
 	
 	return {pages, count, fromNumber, toNumber, listings};
-}
+});
 
-async function addBid({listingId, winningBidderId, currentBidAmount, nextBidAmount, numberOfBids}) {
+service.add('event:addBid', async ({listingId, winningBidderId, currentBidAmount, nextBidAmount, numberOfBids}) => {
 	const listing = await Listing.findById(listingId);
 	listing.update({winningBidderId, currentBidAmount, nextBidAmount, numberOfBids:sequelize.literal('"numberOfBids" + ' + numberOfBids)});
-}
+});
 
-const service = new Service('listing');
-service.add('role:listing,cmd:add', add);
-service.add('role:listing,cmd:search', search);
-service.add('role:listing,_cmd:addUser', ({userId, username}) => User.create({userId, username}) );
-service.add('role:listing,_cmd:addBid', addBid);
+service.add('event:addUser', ({userId, username}) => User.create({userId, username}) );
 
 module.exports = service;
