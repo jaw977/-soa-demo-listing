@@ -47,7 +47,9 @@ service.add('cmd:search', async ({category, sellerId, sellerUsername, page}) => 
 
 service.add('event:addBid', async ({listingId, winningBidderId, currentBidAmount, nextBidAmount, numberOfBids}) => {
 	const listing = await Listing.findById(listingId);
-	listing.update({winningBidderId, currentBidAmount, nextBidAmount, numberOfBids:sequelize.literal('"numberOfBids" + ' + numberOfBids)});
+	if (currentBidAmount > listing.currentBidAmount) {
+		listing.update({winningBidderId, currentBidAmount, nextBidAmount, numberOfBids:sequelize.literal('"numberOfBids" + ' + numberOfBids)});
+	}
 });
 
 service.add('event:addUser', ({userId, username}) => User.create({userId, username}) );
